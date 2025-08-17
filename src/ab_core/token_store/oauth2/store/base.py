@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from obo_core.auth_client.oauth2.schema.token import OAuth2Token
+from ab_core.auth_client.oauth2.schema.token import OAuth2Token
 
 
 class OAuth2TokenStoreBase(BaseModel, ABC):

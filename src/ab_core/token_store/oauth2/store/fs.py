@@ -2,17 +2,38 @@ import json
 import os
 from typing import Literal, Optional, override
 
-from obo_core.auth_client.oauth2.schema.token import OAuth2Token
-from obo_core.token_store.oauth2.schema.store_type import (
+from pydantic import ValidationInfo, field_validator
+
+from ab_core.auth_client.oauth2.schema.token import OAuth2Token
+from ab_core.token_store.oauth2.schema.store_type import (
     StoreType,
 )
 
 from .base import OAuth2TokenStoreBase
 
 
-class DatabaseOAuth2TokenStore(OAuth2TokenStoreBase):
-    type: Literal[StoreType.DATABASE] = StoreType.DATABASE
+class FSOAuth2TokenStore(OAuth2TokenStoreBase):
+    type: Literal[StoreType.FS] = StoreType.FS
     template: str
+
+    @field_validator("template")
+    def template_is_valid(cls, v: str, info: ValidationInfo):
+        required_keys = ["user_id", "connection_id"]
+        for required_key in required_keys:
+            required_template_key = "{" + required_key + "}"
+            if required_template_key not in v:
+                raise ValueError(
+                    f"Token Store FS Template must have {required_template_key} in it."
+                )
+        return v
+
+    def _path(self, user_id: str, connection_id: str) -> str:
+        return os.path.expanduser(
+            self.template.format(
+                user_id=user_id,
+                connection_id=connection_id,
+            )
+        )
 
     @override
     def load(self, user_id: str, connection_id: str) -> Optional[OAuth2Token]:
